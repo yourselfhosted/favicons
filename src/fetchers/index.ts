@@ -1,7 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-const fetchFaviconUrls = async (url: string): Promise<string[]> => {
+// fetchHTMLFaviconUrls fetches the favicon URLs from the HTML of a given URL.
+const fetchHTMLFaviconUrls = async (url: string): Promise<string[]> => {
   try {
     const response = await axios.get(url, {
       timeout: 5000,
@@ -25,6 +26,7 @@ const fetchFaviconUrls = async (url: string): Promise<string[]> => {
   }
 };
 
+// getFaviconUrlsFromHtml extracts the favicon URLs from the HTML.
 const getFaviconUrlsFromHtml = (html: string, baseUrl: string): string[] => {
   const $ = cheerio.load(html);
   const faviconUrls: string[] = [];
@@ -45,6 +47,7 @@ const getFaviconUrlsFromHtml = (html: string, baseUrl: string): string[] => {
   return faviconUrls;
 };
 
+// makeAbsoluteUrl makes a URL absolute.
 const makeAbsoluteUrl = (url: string, baseUrl: string): string => {
   const trimmedBaseUrl = baseUrl.replace(/\/$/, "");
   const absolutePattern = /^https?:\/\//i;
@@ -57,6 +60,38 @@ const makeAbsoluteUrl = (url: string, baseUrl: string): string => {
   } else {
     return `${trimmedBaseUrl}/${url}`;
   }
+};
+
+// fetchGoogleFaviconUrls fetches the favicon URLs from Google's favicon service.
+const fetchGoogleFaviconUrls = async (url: string): Promise<string[]> => {
+  try {
+    const response = await axios.get(
+      `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${url}&size=64`,
+      {
+        headers: {
+          Cookie: "",
+          Connection: "keep-alive",
+          "user-agent":
+            "Mozilla/5.0 (iPad; CPU OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1",
+        },
+        responseType: "arraybuffer",
+      }
+    );
+    return [response.headers["content-location"]];
+  } catch (error) {
+    console.error("Error fetching Google favicon:", error);
+    return [];
+  }
+};
+
+// fetchFaviconUrls fetches the favicon URLs from a given URL.
+const fetchFaviconUrls = async (url: string): Promise<string[]> => {
+  const htmlFaviconUrls = await fetchHTMLFaviconUrls(url);
+  if (htmlFaviconUrls.length > 0) {
+    return htmlFaviconUrls;
+  }
+
+  return fetchGoogleFaviconUrls(url);
 };
 
 export default fetchFaviconUrls;
