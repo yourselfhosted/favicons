@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (request: NextRequest) => {
   const searchParams = request.nextUrl.searchParams;
-  const domain = searchParams.get("domain");
-  if (!domain) {
+  const url = searchParams.get("url");
+  if (!url) {
     const redirectUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}/about`;
     return NextResponse.redirect(redirectUrl);
   }
 
   try {
-    const faviconUrl = await getFaviconUrl(domain);
+    const faviconUrl = await getFaviconUrl(url);
     if (!faviconUrl) {
       return new Response("Not Found", {
         status: 404,
